@@ -63,6 +63,11 @@ types-Deprecated = "^1.2.9"
 pycryptodome = "^3.23.0"
 mcp = {extras = ["cli"], version = "^1.9.3"}
 fastmcp = "^2.9.2"
+fastapi = "^0.115.14"
+langchain-core = "^0.3.66"
+langchain-google-genai = "^2.1.5"
+langchain-mcp-adapters = "^0.1.7"
+langgraph = "^0.5.0"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^7.1.2"
@@ -83,7 +88,7 @@ aiounittest = "^1.4.3"
 coverage = "^7.2.7"
 Sphinx = "^7.1.2"
 poethepoet = "^0.30.0"
-packaging = "^25.0"
+packaging = ">=23.2,<25"
 
 [tool.isort]
 # Make sure that isort's settings line up with black

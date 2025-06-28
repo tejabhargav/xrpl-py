@@ -165,88 +165,83 @@ def create_dynamic_model_tool(model_class: Type[BaseModel], category: str) -> No
     tool_name = f"create_{category.lower()}_{model_class.__name__.lower()}"
 
     # Create a function with explicit parameters using types.FunctionType
-    import types
-    
     # Build parameter list for function creation
     all_params = required_params + optional_params
-    
+
     def convert_field_value(field_name: str, value: object) -> object:
         """Convert field value to the appropriate type based on field info."""
-        if value is None or field_name not in fields:
-            return value
-            
-        field_info = fields[field_name]
-        type_info = field_info["type_info"]
-        python_type_str = type_info["python_type"]
-        
-        # Skip conversion if value is already the right type
-        if python_type_str == str(type(value)):
-            return value
-            
-        try:
-            # Handle common type conversions
-            if "int" in python_type_str.lower() and not isinstance(value, int):
-                if isinstance(value, str):
-                    # Handle string to int conversion
-                    value = value.strip()
-                    if value.isdigit() or (value.startswith('-') and value[1:].isdigit()):
-                        return int(value)
-                elif isinstance(value, float) and value.is_integer():
-                    return int(value)
-                    
-            elif "float" in python_type_str.lower() and not isinstance(value, float):
-                if isinstance(value, str):
-                    value = value.strip()
-                    try:
-                        return float(value)
-                    except ValueError:
-                        pass
-                elif isinstance(value, int):
-                    return float(value)
-                    
-            elif "bool" in python_type_str.lower() and not isinstance(value, bool):
-                if isinstance(value, str):
-                    value = value.strip().lower()
-                    if value in ("true", "1", "yes", "on"):
-                        return True
-                    elif value in ("false", "0", "no", "off"):
-                        return False
-                elif isinstance(value, int):
-                    return bool(value)
-                    
-            elif "str" in python_type_str.lower() and not isinstance(value, str):
-                return str(value)
-                
-        except (ValueError, TypeError):
-            # If conversion fails, return original value and let model validation handle it
-            pass
-            
+        if value is None:
+            return None
+
+        # Handle string to boolean conversion
+        if isinstance(value, str):
+            if value.lower() in ["true", "1", "yes", "on"]:
+                return True
+            elif value.lower() in ["false", "0", "no", "off"]:
+                return False
+
+        # Try to convert to int if it looks like a number
+        if isinstance(value, str) and value.isdigit():
+            try:
+                return int(value)
+            except ValueError:
+                pass
+
+        # Try to convert to float
+        if isinstance(value, str):
+            try:
+                float_val = float(value)
+                # Only return float if it's not a whole number
+                if float_val != int(float_val):
+                    return float_val
+                else:
+                    return int(float_val)
+            except ValueError:
+                pass
+
+        # Try to convert hex strings to integers for numeric fields
+        if (
+            isinstance(value, str)
+            and field_name.endswith(("_id", "_hash", "_sequence"))
+            and value.startswith("0x")
+        ):
+            try:
+                return int(value, 16)
+            except ValueError:
+                pass
+
         return value
-    
-    # Create the function implementation
+
     def create_function_with_params():
         # Build the actual implementation
-        def implementation(*args, **kwargs):
+        def implementation(*args, **kwargs) -> Dict[str, object]:  # type: ignore
             # Map positional args to parameter names
             param_values = {}
-            for i, arg in enumerate(args):
+            for i, value in enumerate(args):
                 if i < len(all_params):
-                    param_values[all_params[i]] = arg
-            
+                    param_values[all_params[i]] = value
+
             # Add keyword arguments
             param_values.update(kwargs)
-            
-            # Filter out None values and convert types
+
+            # Convert and filter parameters
             filtered_kwargs = {}
-            for k, v in param_values.items():
-                if v is not None:
-                    converted_value = convert_field_value(k, v)
-                    filtered_kwargs[k] = converted_value
-            
+            for field_name, value in param_values.items():
+                if field_name in [
+                    "_meta"
+                ]:  # Skip metadata fields that aren't model fields
+                    continue
+                if value is not None or field_name in required_params:
+                    converted_value = convert_field_value(field_name, value)
+                    if converted_value is not None:
+                        filtered_kwargs[field_name] = converted_value
+
             try:
                 # Validate required fields
                 missing_required = [
-                    field for field in required_params if field not in filtered_kwargs
+                    field
+                    for field in required_params
+                    if field not in filtered_kwargs
                 ]
                 if missing_required:
                     return {
@@ -262,7 +257,8 @@ def create_dynamic_model_tool(model_class: Type[BaseModel], category: str) -> No
                                 "type": info["type_info"]["python_type"],
                                 "enum_values": (
                                     info["type_info"]["enum_info"]["values"]
-                                    if info["type_info"]["enum_info"] else None
+                                    if info["type_info"]["enum_info"]
+                                    else None
                                 ),
                                 "description": info["description"],
                             }
@@ -278,10 +274,14 @@ def create_dynamic_model_tool(model_class: Type[BaseModel], category: str) -> No
                         enum_info = field_info["type_info"]["enum_info"]
                         if enum_info and value is not None:
                             valid_values = list(enum_info["values"].keys())
-                            if value not in valid_values and str(value) not in valid_values:
+                            if (
+                                value not in valid_values
+                                and str(value) not in valid_values
+                            ):
                                 # Try to match by enum value
                                 valid_enum_values = [
-                                    info["value"] for info in enum_info["values"].values()
+                                    info["value"]
+                                    for info in enum_info["values"].values()
                                 ]
                                 if value not in valid_enum_values:
                                     validation_errors.append(
@@ -300,43 +300,25 @@ def create_dynamic_model_tool(model_class: Type[BaseModel], category: str) -> No
                 # Create the model instance
                 model_instance = model_class(**filtered_kwargs)
 
-                # Return comprehensive result
-                return {
-                    "success": True,
-                    "model_class": model_class.__name__,
-                    "category": category,
-                    "data": model_instance.to_dict(),
-                    "validation_passed": model_instance.is_valid(),
-                    "provided_fields": list(filtered_kwargs.keys()),
-                    "model_schema": {
-                        "required_fields": required_params,
-                        "optional_fields": optional_params,
-                        "field_details": {
-                            name: {
-                                "type": info["type_info"]["python_type"],
-                                "required": info["required"],
-                                "enum_values": (
-                                    list(info["type_info"]["enum_info"]["values"].keys())
-                                    if info["type_info"]["enum_info"] else None
-                                ),
-                                "description": info["description"],
-                            }
-                            for name, info in fields.items()
-                        },
-                    },
-                }
+                # Return just 
+                #the model dictionary as requested
+                if hasattr(model_instance, 'to_xrpl'):
+                    return model_instance.to_xrpl()
+                else:
+                    return model_instance.to_dict()
 
             except Exception as e:
-                return {
-                    "success": False,
-                    "error": str(e),
-                    "model_class": model_class.__name__,
-                    "category": category,
-                    "provided_fields": list(param_values.keys()),
-                    "required_fields": required_params,
-                    "optional_fields": optional_params,
-                    "type_conversion_attempted": True,
-                }
+                return str(e)
+                # return {
+                #     "success": False,
+                #     "error": str(e),
+                #     "model_class": model_class.__name__,
+                #     "category": category,
+                #     "provided_fields": list(param_values.keys()),
+                #     "required_fields": required_params,
+                #     "optional_fields": optional_params,
+                #     "type_conversion_attempted": True,
+                # }
 
         # Create a new function with the right signature
         import inspect
