@@ -1,3 +1,21 @@
+[tool.poetry]
+name = "xrpl-py"
+version = "4.1.0"
+description = "A complete Python library for interacting with the XRP ledger"
+authors = [
+  "Mayukha Vadari <mvadari@ripple.com>",
+  "Greg Weisbrod <gweisbrod@ripple.com>",
+  "Amie Corso <acorso@ripple.com>",
+  "Ted Kalaw <tkalaw@ripple.com>",
+  "Florent Uzio <fuzio@ripple.com>",
+  "Mayur Bhandary <mbhandary@ripple.com>",
+  "Nathan Nichols <nnichols@ripple.com>",
+  "Caleb Kniffen <ckniffen@ripple.com>",
+  "Omar Khan <okhan@ripple.com>",
+  "Justin Reynolds <justinr1234@gmail.com>",
+]
+packages = [{ include = "xrpl" }, { include = "LICENSE" }]
+
 [project]
 name = "xrpl-py"
 version = "4.1.0"
@@ -25,7 +43,7 @@ maintainers = [
   { name = "Phu Pham", email = "ppham@ripple.com" },
 ]
 keywords = ["xrp", "xrpl", "cryptocurrency"]
-requires-python = ">=3.8.1"
+requires-python = ">=3.10"
 dynamic = [ "dependencies" ]
 
 [project.urls]
@@ -33,11 +51,8 @@ repository = "https://github.com/XRPLF/xrpl-py"
 documentation = "https://xrpl-py.readthedocs.io"
 "Bug Tracker" = "https://github.com/XRPLF/xrpl-py/issues"
 
-[tool.poetry]
-packages = [{ include = "xrpl" }, { include = "LICENSE" }]
-
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.10,<4.0"
 base58 = "^2.1.0"
 ECPy = "^1.2.5"
 typing-extensions = "^4.13.2"
@@ -46,6 +61,8 @@ websockets = ">=11"
 Deprecated = "^1.2.13"
 types-Deprecated = "^1.2.9"
 pycryptodome = "^3.23.0"
+mcp = {extras = ["cli"], version = "^1.9.3"}
+fastmcp = "^2.9.2"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^7.1.2"

@@ -1,6 +1,9 @@
 """Various useful string conversions utilities for XRPL."""
 
+from xrpl.server.config import mcp
 
+
+@mcp.tool()
 def str_to_hex(input: str) -> str:
     """
     Convert a UTF-8-encoded string into hexadecimal encoding.
@@ -15,7 +18,7 @@ def str_to_hex(input: str) -> str:
     """
     return input.encode("utf-8").hex()
 
-
+@mcp.tool()
 def hex_to_str(input: str) -> str:
     """
     Convert a hex string into a human-readable string.

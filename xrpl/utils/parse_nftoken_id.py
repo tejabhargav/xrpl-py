@@ -4,6 +4,7 @@ from typing_extensions import TypedDict
 
 from xrpl.constants import XRPLException
 from xrpl.core.addresscodec.codec import encode_classic_address
+from xrpl.server.config import mcp
 
 
 class NFTokenID(TypedDict):
@@ -47,6 +48,7 @@ def unscramble_taxon(taxon: int, token_seq: int) -> int:
     return (taxon ^ (384160001 * token_seq + 2459)) % 4294967296
 
 
+@mcp.tool()
 def parse_nftoken_id(nft_id: str) -> NFTokenID:
     """
     Parse an NFTokenID into the information it is encoding.

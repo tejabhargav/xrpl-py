@@ -7,14 +7,14 @@ from typing_extensions import Final
 
 from xrpl.asyncio.clients import Client
 from xrpl.asyncio.ledger import get_latest_validated_ledger_sequence
-from xrpl.asyncio.transaction.main import _check_fee
+from xrpl.asyncio.transaction.main import _check_fee, sign, submit
 from xrpl.asyncio.transaction.main import autofill as _autofill
-from xrpl.asyncio.transaction.main import sign, submit
 from xrpl.clients import XRPLRequestFailureException
 from xrpl.constants import XRPLException
 from xrpl.models.requests import Tx
 from xrpl.models.response import Response
 from xrpl.models.transactions.transaction import Transaction
+from xrpl.server.config import xrpl_client as client
 from xrpl.wallet.main import Wallet
 
 _LEDGER_CLOSE_TIME: Final[int] = 1
@@ -172,7 +172,6 @@ async def _get_signed_tx(
 
 async def submit_and_wait(
     transaction: Union[Transaction, str],
-    client: Client,
     wallet: Optional[Wallet] = None,
     *,
     check_fee: bool = True,
@@ -189,7 +188,6 @@ async def submit_and_wait(
     Args:
         transaction: the signed/unsigned transaction (or transaction blob) to
             be submitted.
-        client: the network client with which to submit the transaction.
         wallet: an optional wallet with which to sign the transaction. This is
             only needed if the transaction is unsigned.
         check_fee: an optional bolean indicating whether to check if the fee is

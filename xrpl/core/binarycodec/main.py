@@ -20,7 +20,6 @@ _PAYMENT_CHANNEL_CLAIM_PREFIX: Final[bytes] = _num_to_bytes(0x434C4D00)
 _TRANSACTION_MULTISIG_PREFIX: Final[bytes] = _num_to_bytes(0x534D5400)
 _BATCH_PREFIX: Final[bytes] = _num_to_bytes(0x42434800)
 
-
 def encode(json: Dict[str, Any]) -> str:
     """
     Encode a transaction or other object into the canonical binary format.
@@ -32,7 +31,6 @@ def encode(json: Dict[str, Any]) -> str:
         The binary-encoded object, as a hexadecimal string.
     """
     return _serialize_json(json)
-
 
 def encode_for_signing(json: Dict[str, Any]) -> str:
     """
@@ -50,7 +48,6 @@ def encode_for_signing(json: Dict[str, Any]) -> str:
         prefix=_TRANSACTION_SIGNATURE_PREFIX,
         signing_only=True,
     )
-
 
 def encode_for_signing_claim(json: Dict[str, Any]) -> str:
     """
@@ -102,7 +99,6 @@ def encode_for_signing_batch(json: BatchSigningDict) -> str:
 
     return buffer.hex().upper()
 
-
 def encode_for_multisigning(json: Dict[str, Any], signing_account: str) -> str:
     """
     Encode a transaction into binary format in preparation for providing one
@@ -125,7 +121,6 @@ def encode_for_multisigning(json: Dict[str, Any], signing_account: str) -> str:
         signing_only=True,
     )
 
-
 def decode(buffer: str) -> Dict[str, Any]:
     """
     Decode a transaction from binary format to a JSON-like dictionary
@@ -140,7 +135,6 @@ def decode(buffer: str) -> Dict[str, Any]:
     parser = BinaryParser(buffer)
     parsed_type = cast(STObject, parser.read_type(STObject))
     return parsed_type.to_json()
-
 
 def _serialize_json(
     json: Dict[str, Any],

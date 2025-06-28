@@ -6,15 +6,15 @@ from xrpl.asyncio.clients import Client, XRPLRequestFailureException
 from xrpl.asyncio.ledger.utils import calculate_fee_dynamically
 from xrpl.constants import XRPLException
 from xrpl.models.requests import Fee, Ledger
+from xrpl.server.config import mcp
+from xrpl.server.config import xrpl_client as client
 from xrpl.utils import xrp_to_drops
 
 
-async def get_latest_validated_ledger_sequence(client: Client) -> int:
+@mcp.tool()
+async def get_latest_validated_ledger_sequence() -> int:
     """
     Returns the sequence number of the latest validated ledger.
-
-    Args:
-        client: The network client to use to send the request.
 
     Returns:
         The sequence number of the latest validated ledger.
@@ -29,7 +29,8 @@ async def get_latest_validated_ledger_sequence(client: Client) -> int:
     raise XRPLRequestFailureException(response.result)
 
 
-async def get_latest_open_ledger_sequence(client: Client) -> int:
+@mcp.tool()
+async def get_latest_open_ledger_sequence() -> int:
     """
     Returns the sequence number of the latest open ledger.
 
@@ -40,8 +41,6 @@ async def get_latest_open_ledger_sequence(client: Client) -> int:
     Read this document for more info:
     https://xrpl.org/docs/references/http-websocket-apis/public-api-methods/ledger-methods/ledger#request-format
 
-    Args:
-        client: The network client to use to send the request.
 
     Returns:
         The sequence number of the latest open ledger.
@@ -68,15 +67,14 @@ async def get_latest_open_ledger_sequence(client: Client) -> int:
 
     raise XRPLRequestFailureException(response.result)
 
-
+@mcp.tool()
 async def get_fee(
-    client: Client, *, max_fee: Optional[float] = 2, fee_type: str = "open"
+    *, max_fee: Optional[float] = 2, fee_type: str = "open"
 ) -> str:
     """
     Query the ledger for the current transaction fee.
 
     Args:
-        client: the network client used to make network calls.
         max_fee: The maximum fee in XRP that the user wants to pay. If load gets too
             high, then the fees will not scale past the maximum fee. If None, there is
             no ceiling for the fee. The default is 2 XRP.

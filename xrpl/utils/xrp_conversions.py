@@ -7,6 +7,7 @@ from typing import Pattern, Union
 from typing_extensions import Final
 
 from xrpl.constants import DROPS_DECIMAL_CONTEXT, XRPLException
+from xrpl.server.config import mcp
 
 ONE_DROP: Final[Decimal] = Decimal("0.000001")
 """Indivisible unit of XRP"""
@@ -21,7 +22,7 @@ MAX_DROPS: Final[Decimal] = Decimal(10**17)
 # See also: https://xrpl.org/currency-formats.html#string-numbers
 _DROPS_REGEX: Final[Pattern[str]] = re.compile("(?:[1-9][0-9Ee-]{0,17}|0)")
 
-
+@mcp.tool()
 def xrp_to_drops(xrp: Union[int, float, Decimal]) -> str:
     """
     Convert a numeric XRP amount to drops of XRP.
@@ -69,7 +70,7 @@ def xrp_to_drops(xrp: Union[int, float, Decimal]) -> str:
 
     return drops_str
 
-
+@mcp.tool()
 def drops_to_xrp(drops: str) -> Decimal:
     """
     Convert from drops to decimal XRP.

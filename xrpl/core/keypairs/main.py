@@ -21,7 +21,6 @@ _ALGORITHM_TO_MODULE_MAP: Final[Dict[CryptoAlgorithm, Type[CryptoImplementation]
     CryptoAlgorithm.SECP256K1: SECP256K1,
 }
 
-
 def generate_seed(
     entropy: Optional[str] = None,
     algorithm: CryptoAlgorithm = CryptoAlgorithm.ED25519,
@@ -47,7 +46,6 @@ def generate_seed(
     else:
         parsed_entropy = bytes.fromhex(entropy)
     return addresscodec.encode_seed(parsed_entropy, algorithm)
-
 
 def derive_keypair(
     seed: str, validator: bool = False, algorithm: Optional[CryptoAlgorithm] = None
@@ -80,7 +78,6 @@ def derive_keypair(
         )
     return public_key, private_key
 
-
 def derive_classic_address(public_key: str) -> str:
     """
     Derive the XRP Ledger classic address for a given public key. See
@@ -96,7 +93,6 @@ def derive_classic_address(public_key: str) -> str:
     """
     account_id = get_account_id(bytes.fromhex(public_key))
     return addresscodec.encode_classic_address(account_id)
-
 
 def sign(message: Union[str, bytes], private_key: str) -> str:
     """
@@ -121,7 +117,6 @@ def sign(message: Union[str, bytes], private_key: str) -> str:
         .upper()
     )
 
-
 def is_valid_message(message: bytes, signature: bytes, public_key: str) -> bool:
     """
     Verifies the signature on a given message.
@@ -140,7 +135,6 @@ def is_valid_message(message: bytes, signature: bytes, public_key: str) -> bool:
         signature,
         public_key,
     )
-
 
 def _get_module_from_key(key: str) -> Type[CryptoImplementation]:
     if key.startswith(ED_PREFIX):

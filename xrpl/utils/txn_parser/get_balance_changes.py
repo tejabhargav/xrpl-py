@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import List, Optional
 
 from xrpl.models import TransactionMetadata
+from xrpl.server.config import mcp
 from xrpl.utils.txn_parser.utils import (
     AccountBalances,
     NormalizedNode,
@@ -12,6 +13,7 @@ from xrpl.utils.txn_parser.utils import (
 )
 
 
+@mcp.tool()
 def get_balance_changes(metadata: TransactionMetadata) -> List[AccountBalances]:
     """
     Parse all balance changes from a transaction's metadata. Does not include

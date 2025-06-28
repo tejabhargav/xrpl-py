@@ -11,6 +11,7 @@ from xrpl.asyncio.account import get_balance, get_next_valid_seq_number
 from xrpl.asyncio.clients import Client, XRPLRequestFailureException
 from xrpl.asyncio.clients.client import get_network_id_and_build_version
 from xrpl.constants import XRPLException
+from xrpl.server.config import xrpl_client as client
 from xrpl.wallet.main import Wallet
 
 _TEST_FAUCET_URL: Final[str] = "https://faucet.altnet.rippletest.net/accounts"
@@ -27,7 +28,6 @@ class XRPLFaucetException(XRPLException):
 
 
 async def generate_faucet_wallet(
-    client: Client,
     wallet: Optional[Wallet] = None,
     debug: bool = False,
     faucet_host: Optional[str] = None,
@@ -38,7 +38,6 @@ async def generate_faucet_wallet(
     Generates a random wallet and funds it using the XRPL Testnet Faucet.
 
     Args:
-        client: the network client used to make network calls.
         wallet: the wallet to fund. If omitted or `None`, a new wallet is created.
         debug: Whether to print debug information as it creates the wallet.
         faucet_host: A custom host to use for funding a wallet. In environments other

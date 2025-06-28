@@ -27,6 +27,8 @@ from xrpl.models.transactions.transaction import (
     transaction_json_to_binary_codec_form as model_transaction_to_binary_codec,
 )
 from xrpl.models.transactions.types.transaction_type import TransactionType
+from xrpl.server.config import mcp
+from xrpl.server.config import xrpl_client as client
 from xrpl.utils import drops_to_xrp, xrp_to_drops
 from xrpl.wallet import Wallet
 
@@ -44,7 +46,6 @@ T = TypeVar("T", bound=Transaction, default=Transaction)
 
 async def sign_and_submit(
     transaction: Transaction,
-    client: Client,
     wallet: Wallet,
     autofill: bool = True,
     check_fee: bool = True,
@@ -55,7 +56,6 @@ async def sign_and_submit(
 
     Args:
         transaction: the transaction to be signed and submitted.
-        client: the network client with which to submit the transaction.
         wallet: the wallet with which to sign the transaction.
         autofill: whether to autofill the relevant fields. Defaults to True.
         check_fee: whether to check if the fee is higher than the expected transaction
@@ -125,7 +125,6 @@ def sign(
 
 async def autofill_and_sign(
     transaction: T,
-    client: Client,
     wallet: Wallet,
     check_fee: bool = True,
 ) -> T:
@@ -136,7 +135,6 @@ async def autofill_and_sign(
     Args:
         transaction: the transaction to be signed.
         wallet: the wallet with which to sign the transaction.
-        client: a network client.
         check_fee: whether to check if the fee is higher than the expected transaction
             type fee. Defaults to True.
 
@@ -152,9 +150,9 @@ async def autofill_and_sign(
     return sign(await autofill(transaction, client), wallet, multisign=False)
 
 
+@mcp.tool()
 async def submit(
     transaction: Transaction,
-    client: Client,
     *,
     fail_hard: bool = False,
 ) -> Response:
@@ -163,7 +161,6 @@ async def submit(
 
     Args:
         transaction: The Transaction to be submitted.
-        client: The network client with which to submit the transaction.
         fail_hard: An optional boolean. If True, and the transaction fails for
             the initial server, do not retry or relay the transaction to other
             servers. Defaults to False.
@@ -184,9 +181,9 @@ async def submit(
     raise XRPLRequestFailureException(response.result)
 
 
+@mcp.tool()
 async def simulate(
     transaction: Transaction,
-    client: Client,
     *,
     binary: bool = False,
 ) -> Response:
@@ -195,7 +192,6 @@ async def simulate(
 
     Args:
         transaction: The transaction to simulate.
-        client: The network client with which to submit the transaction.
         binary: Whether the return data should be encoded in the XRPL's binary format.
             Defaults to False.
 
@@ -220,6 +216,7 @@ async def simulate(
     raise XRPLRequestFailureException(response.result)
 
 
+@mcp.tool()
 def _prepare_transaction(transaction: Transaction) -> Dict[str, Any]:
     """
     Prepares a Transaction by converting it to a JSON-like dictionary, converting the
@@ -257,8 +254,9 @@ def _prepare_transaction(transaction: Transaction) -> Dict[str, Any]:
     return transaction_json
 
 
+@mcp.tool()
 async def autofill(
-    transaction: T, client: Client, signers_count: Optional[int] = None
+    transaction: T, signers_count: Optional[int] = None
 ) -> T:
     """
     Autofills fields in a transaction. This will set all autofill-able fields according
@@ -268,7 +266,6 @@ async def autofill(
 
     Args:
         transaction: the transaction to be signed.
-        client: a network client.
         signers_count: the expected number of signers for this transaction.
             Only used for multisigned transactions.
 
@@ -303,16 +300,13 @@ async def autofill(
     return cast(T, Transaction.from_dict(transaction_json))
 
 
-def _tx_needs_networkID(client: Client) -> bool:
+def _tx_needs_networkID() -> bool:
     """
     Determines whether the transactions required network ID to be valid.
     Transaction needs networkID if later than restricted ID and either
         the network is hooks testnet or build version is >= 1.11.0.
     More context: https://github.com/XRPLF/rippled/pull/4370
-
-    Args:
-        client (Client): The network client to use to send the request.
-
+s
     Returns:
         bool: whether the transactions required network ID to be valid
     """
@@ -413,6 +407,7 @@ def _convert_to_classic_address(json: Dict[str, Any], field: str) -> None:
         json[field] = xaddress_to_classic_address(json[field])[0]
 
 
+@mcp.tool()
 def transaction_json_to_binary_codec_form(dictionary: Dict[str, Any]) -> Dict[str, Any]:
     """
     Returns a new dictionary in which the keys have been formatted as CamelCase and
@@ -427,9 +422,9 @@ def transaction_json_to_binary_codec_form(dictionary: Dict[str, Any]) -> Dict[st
     return model_transaction_to_binary_codec(dictionary)
 
 
+@mcp.tool()
 async def _check_fee(
     transaction: Transaction,
-    client: Client,
     signers_count: Optional[int] = None,
 ) -> None:
     """
@@ -437,7 +432,6 @@ async def _check_fee(
 
     Args:
         transaction: The transaction to check.
-        client: Client instance to use to look up network load
         signers_count: the expected number of signers for this transaction.
             Only used for multisigned transactions.
 
@@ -463,7 +457,6 @@ async def _check_fee(
 
 async def _calculate_fee_per_transaction_type(
     transaction: Transaction,
-    client: Client,
     signers_count: Optional[int] = None,
 ) -> str:
     """
@@ -475,7 +468,6 @@ async def _calculate_fee_per_transaction_type(
 
     Args:
         transaction: the Transaction to be submitted.
-        client: the network client with which to submit the transaction.
         signers_count: the expected number of signers for this transaction.
             Only used for multisigned transactions and multi-account/multi-signed Batch
             transactions.
@@ -524,14 +516,16 @@ async def _calculate_fee_per_transaction_type(
     return str(math.ceil(base_fee))
 
 
-async def _fetch_owner_reserve_fee(client: Client) -> int:
+@mcp.tool()
+async def _fetch_owner_reserve_fee() -> int:
     server_state = await client._request_impl(ServerState())
     fee = server_state.result["state"]["validated_ledger"]["reserve_inc"]
     return int(fee)
 
 
+@mcp.tool()
 async def _autofill_batch(
-    client: Client, transaction_dict: Dict[str, Any]
+    transaction_dict: Dict[str, Any]
 ) -> List[Dict[str, Any]]:
     transaction = Batch.from_dict(transaction_dict)
     assert transaction.sequence is not None

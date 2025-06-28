@@ -9,6 +9,7 @@ from typing import Union
 from typing_extensions import Final
 
 from xrpl.constants import XRPLException
+from xrpl.server.config import mcp
 
 RIPPLE_EPOCH: Final[int] = 946684800
 """The "Ripple Epoch" of 2000-01-01T00:00:00 UTC"""
@@ -16,7 +17,7 @@ RIPPLE_EPOCH: Final[int] = 946684800
 MAX_XRPL_TIME: Final[int] = 2**32
 """The maximum time that can be expressed on the XRPL"""
 
-
+@mcp.tool()
 def ripple_time_to_datetime(ripple_time: int) -> datetime:
     """
     Convert from XRP Ledger 'Ripple Epoch' time to a UTC `datetime
@@ -41,7 +42,7 @@ def ripple_time_to_datetime(ripple_time: int) -> datetime:
     timestamp = ripple_time + RIPPLE_EPOCH
     return datetime.fromtimestamp(timestamp, timezone.utc)
 
-
+@mcp.tool()
 def datetime_to_ripple_time(dt: datetime) -> int:
     """
     Convert from a `datetime
@@ -68,7 +69,7 @@ def datetime_to_ripple_time(dt: datetime) -> int:
         )
     return ripple_time
 
-
+@mcp.tool()
 def ripple_time_to_posix(ripple_time: int) -> int:
     """
     Convert from XRP Ledger 'Ripple Epoch' time to a POSIX-like integer
@@ -95,7 +96,7 @@ def ripple_time_to_posix(ripple_time: int) -> int:
     timestamp = ripple_time + RIPPLE_EPOCH
     return timestamp
 
-
+@mcp.tool()
 def posix_to_ripple_time(timestamp: Union[int, float]) -> int:
     """
     Convert from a POSIX-like timestamp such as one returned by `time.time()

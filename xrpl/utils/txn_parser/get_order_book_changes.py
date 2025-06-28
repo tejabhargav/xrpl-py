@@ -3,9 +3,11 @@
 from typing import List
 
 from xrpl.models import TransactionMetadata
+from xrpl.server.config import mcp
 from xrpl.utils.txn_parser.utils import AccountOfferChanges, compute_order_book_changes
 
 
+@mcp.tool()
 def get_order_book_changes(metadata: TransactionMetadata) -> List[AccountOfferChanges]:
     """
     Parse all order book changes from a transaction's metadata.

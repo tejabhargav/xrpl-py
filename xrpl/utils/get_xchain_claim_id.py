@@ -1,8 +1,10 @@
 """Utils to get an XChainClaimID from metadata."""
 
 from xrpl.models.transactions.metadata import TransactionMetadata, isCreatedNode
+from xrpl.server.config import mcp
 
 
+@mcp.tool()
 def get_xchain_claim_id(meta: TransactionMetadata) -> str:
     """
     Gets the XChainClaimID from a recently-submitted XChainCreateClaimID transaction.

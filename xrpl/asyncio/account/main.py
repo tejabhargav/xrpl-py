@@ -2,20 +2,22 @@
 
 from typing import Dict, Union, cast
 
-from xrpl.asyncio.clients import Client, XRPLRequestFailureException
+from xrpl.asyncio.clients import XRPLRequestFailureException
 from xrpl.core.addresscodec import is_valid_xaddress, xaddress_to_classic_address
 from xrpl.models.requests import AccountInfo
+from xrpl.server.config import mcp
+from xrpl.server.config import xrpl_client as client
 
 
+@mcp.tool()
 async def does_account_exist(
-    address: str, client: Client, ledger_index: Union[str, int] = "validated"
+    address: str, ledger_index: Union[str, int] = "validated"
 ) -> bool:
     """
     Query the ledger for whether the account exists.
 
     Args:
         address: the account to query.
-        client: the network client used to make network calls.
         ledger_index: The ledger index to use for the request. Must be an integer
             ledger value or "current" (the current working version), "closed" (for the
             closed-and-proposed version), or "validated" (the most recent version
@@ -28,7 +30,7 @@ async def does_account_exist(
         XRPLRequestFailureException: if the transaction fails.
     """
     try:
-        await get_account_root(address, client, ledger_index=ledger_index)
+        await get_account_root(address, ledger_index=ledger_index)
         return True
     except XRPLRequestFailureException as e:
         if e.error == "actNotFound":
@@ -37,15 +39,15 @@ async def does_account_exist(
         raise
 
 
+@mcp.tool()
 async def get_next_valid_seq_number(
-    address: str, client: Client, ledger_index: Union[str, int] = "current"
+    address: str, ledger_index: Union[str, int] = "current"
 ) -> int:
     """
     Query the ledger for the next available sequence number for an account.
 
     Args:
         address: the account to query.
-        client: the network client used to make network calls.
         ledger_index: The ledger index to use for the request. Must be an integer
             ledger value or "current" (the current working version), "closed" (for the
             closed-and-proposed version), or "validated" (the most recent version
@@ -55,19 +57,19 @@ async def get_next_valid_seq_number(
         The next valid sequence number for the address.
     """
     return cast(
-        int, (await get_account_root(address, client, ledger_index))["Sequence"]
+        int, (await get_account_root(address, ledger_index))["Sequence"]
     )
 
 
+@mcp.tool()
 async def get_balance(
-    address: str, client: Client, ledger_index: Union[str, int] = "validated"
+    address: str, ledger_index: Union[str, int] = "validated"
 ) -> int:
     """
     Query the ledger for the balance of the given account.
 
     Args:
         address: the account to query.
-        client: the network client used to make network calls.
         ledger_index: The ledger index to use for the request. Must be an integer
             ledger value or "current" (the current working version), "closed" (for the
             closed-and-proposed version), or "validated" (the most recent version
@@ -77,19 +79,19 @@ async def get_balance(
         The balance of the address.
     """
     return int(
-        (await get_account_root(address, client, ledger_index=ledger_index))["Balance"]
+        (await get_account_root(address, ledger_index=ledger_index))["Balance"]
     )
 
 
+@mcp.tool()
 async def get_account_root(
-    address: str, client: Client, ledger_index: Union[str, int] = "validated"
+    address: str, ledger_index: Union[str, int] = "validated"
 ) -> Dict[str, Union[int, str]]:
     """
     Query the ledger for the AccountRoot object associated with a given address.
 
     Args:
         address: the account to query.
-        client: the network client used to make network calls.
         ledger_index: The ledger index to use for the request. Must be an integer
             ledger value or "current" (the current working version), "closed" (for the
             closed-and-proposed version), or "validated" (the most recent version

@@ -9,6 +9,7 @@ from xrpl.models.transactions.metadata import (
     isCreatedNode,
     isModifiedNode,
 )
+from xrpl.server.config import mcp
 
 T = TypeVar("T")
 R = TypeVar("R")
@@ -33,6 +34,7 @@ def _flatmap(func: Callable[[T], List[R]], list_of_items: List[T]) -> List[R]:
     return modified_items
 
 
+@mcp.tool()
 def get_nftoken_ids_from_nftokens(nftokens: List[NFTokenMetadata]) -> List[str]:
     """
     Extract NFTokenIDs from a list of NFTokens.
@@ -50,6 +52,7 @@ def get_nftoken_ids_from_nftokens(nftokens: List[NFTokenMetadata]) -> List[str]:
     ]
 
 
+@mcp.tool()
 def get_nftoken_id(meta: TransactionMetadata) -> Union[str, None]:
     """
     Gets the NFTokenID for an NFT recently minted with NFTokenMint.
