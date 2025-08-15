@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "xrpl": {
+      "command": "poetry",
+      "args": ["run", "python", "-m", "xrpl.server.main", "stdio"],
+      "env": {
+        "PYTHONPATH": "."
+      }
+    }
+  }
+}

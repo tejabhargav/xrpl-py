@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>XRPL AI Agent WebSocket Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #messages { height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin: 10px 0; background: #f9f9f9; }
+        input[type="text"] { width: 70%; padding: 5px; }
+        button { padding: 5px 10px; }
+        .message { margin: 5px 0; padding: 5px; border-radius: 3px; }
+        .user { background: #e3f2fd; }
+        .agent { background: #f3e5f5; }
+        .system { background: #e8f5e8; color: #666; font-size: 0.9em; }
+        .error { background: #ffebee; color: #c62828; }
+    </style>
+</head>
+<body>
+    <h1>XRPL AI Agent WebSocket Test</h1>
+    <div id="status">Connecting...</div>
+    <div id="messages"></div>
+    <div>
+        <input type="text" id="messageInput" placeholder="Ask the agent about XRPL operations..." />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+    
+    <h3>Example queries to try:</h3>
+    <ul>
+        <li><button onclick="sendExample('Create a payment transaction from rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH to rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe for 1 XRP')">Create Payment Transaction</button></li>
+        <li><button onclick="sendExample('Get account information for rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH')">Get Account Info</button></li>
+        <li><button onclick="sendExample('Create an XRP currency object')">Create XRP Currency</button></li>
+        <li><button onclick="sendExample('Create an offer to buy 100 USD for 200 XRP')">Create Offer</button></li>
+    </ul>
+
+    <script>
+        const ws = new WebSocket('ws://localhost:8080/chat');
+        const messagesDiv = document.getElementById('messages');
+        const statusDiv = document.getElementById('status');
+        const messageInput = document.getElementById('messageInput');
+
+        ws.onopen = function() {
+            statusDiv.textContent = 'Connected to XRPL AI Agent';
+            statusDiv.style.color = 'green';
+        };
+
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            addMessage(data);
+        };
+
+        ws.onclose = function() {
+            statusDiv.textContent = 'Disconnected from XRPL AI Agent';
+            statusDiv.style.color = 'red';
+        };
+
+        ws.onerror = function(error) {
+            statusDiv.textContent = 'WebSocket Error: ' + error;
+            statusDiv.style.color = 'red';
+        };
+
+        function addMessage(data) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            
+            switch(data.type) {
+                case 'system':
+                    messageDiv.className += ' system';
+                    messageDiv.textContent = `[SYSTEM] ${data.message}`;
+                    break;
+                case 'user_message_received':
+                    messageDiv.className += ' user';
+                    messageDiv.textContent = `[YOU] ${data.message}`;
+                    break;
+                case 'typing':
+                    messageDiv.className += ' system';
+                    messageDiv.textContent = `[AGENT] ${data.message}`;
+                    break;
+                case 'agent_response':
+                    messageDiv.className += ' agent';
+                    messageDiv.innerHTML = `[AGENT] ${data.message.replace(/\\n/g, '<br>')}`;
+                    if (data.metadata) {
+                        messageDiv.innerHTML += `<br><small>Model: ${data.metadata.model}, Tokens: ${data.metadata.tokens}</small>`;
+                    }
+                    break;
+                case 'error':
+                    messageDiv.className += ' error';
+                    messageDiv.textContent = `[ERROR] ${data.message}`;
+                    break;
+            }
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({message: message}));
+                messageInput.value = '';
+            }
+        }
+
+        function sendExample(message) {
+            messageInput.value = message;
+            sendMessage();
+        }
+
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

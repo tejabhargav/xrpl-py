@@ -24,4 +24,9 @@ if __name__ == "__main__":
     import xrpl.utils.txn_parser.get_order_book_changes
     import xrpl.utils.xrp_conversions
     
-    mcp.run("sse")
+    # Check if running in stdio mode for Claude Code
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == "stdio":
+        mcp.run("stdio")
+    else:
+        mcp.run("sse")

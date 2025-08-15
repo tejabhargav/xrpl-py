@@ -158,7 +158,12 @@ Issued currencies are specified as objects with three fields:```json
 - `Issuer`: XRPL address of the currency issuer
 - `Value`: String representation of the amount
 
-**Important Note**: if currency length is more than 3 the currency should be passed as hex-string . use convert currency tool to convert it. if currency is USD you can pass it directly if currency is USDC you should convert into HEX and pass it.
+**Important Note**: Currency codes must follow XRPL standards:
+- XRP: Always use "XRP" 
+- 3-character codes (USD, EUR, BTC): Use as-is
+- Longer currency codes (USDC, USDT, etc.): Will be automatically converted to hex format
+- If user provides a currency longer than 3 characters, the system will automatically convert it to hex-padded format
+- Users can also provide hex currency codes directly (40-character hex strings)
 
 ### Flag Formats
 

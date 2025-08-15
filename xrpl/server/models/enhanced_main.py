@@ -180,15 +180,49 @@ def create_dynamic_model_tool(model_class: Type[BaseModel], category: str) -> No
             elif value.lower() in ["false", "0", "no", "off"]:
                 return False
 
-        # Try to convert to int if it looks like a number
-        if isinstance(value, str) and value.isdigit():
+        # Special handling for XRPL currency codes - convert to hex if longer than 3 chars
+        if field_name == "currency" and isinstance(value, str):
+            # XRP is always valid
+            if value.upper() == "XRP":
+                return value.upper()
+            # Standard 3-character currency codes are valid as-is
+            elif len(value) == 3 and value.isalnum():
+                return value.upper()
+            # Currencies longer than 3 characters must be hex-encoded
+            elif len(value) > 3:
+                # Convert to hex and pad to 40 characters (20 bytes)
+                hex_currency = value.encode('utf-8').hex().upper()
+                # Pad with zeros to 40 characters
+                padded_hex = hex_currency.ljust(40, '0')
+                return padded_hex
+            # If already looks like hex (even length, valid hex chars), validate and pad
+            elif len(value) % 2 == 0 and all(c in '0123456789ABCDEFabcdef' for c in value):
+                padded_hex = value.upper().ljust(40, '0')
+                return padded_hex
+            else:
+                return value
+
+        # Special handling for XRPL amount fields - keep as strings for XRP amounts
+        if field_name in ["amount", "balance", "limit", "fee", "taker_gets", "taker_pays", "send_max", "destination_amount"] and isinstance(value, str):
+            # For XRP amounts (numeric strings), keep as string
+            if value.isdigit():
+                return value
+            # For other numeric strings, still keep as string for consistency
+            try:
+                float(value)
+                return value
+            except ValueError:
+                pass
+
+        # Try to convert to int only for non-amount fields
+        if isinstance(value, str) and value.isdigit() and field_name not in ["amount", "balance", "limit", "fee", "taker_gets", "taker_pays", "send_max", "destination_amount"]:
             try:
                 return int(value)
             except ValueError:
                 pass
 
-        # Try to convert to float
-        if isinstance(value, str):
+        # Try to convert to float for non-amount fields
+        if isinstance(value, str) and field_name not in ["amount", "balance", "limit", "fee", "taker_gets", "taker_pays", "send_max", "destination_amount"]:
             try:
                 float_val = float(value)
                 # Only return float if it's not a whole number
@@ -224,6 +258,21 @@ def create_dynamic_model_tool(model_class: Type[BaseModel], category: str) -> No
             # Add keyword arguments
             param_values.update(kwargs)
 
+            def convert_nested_currencies(obj):
+                """Recursively convert currency fields in nested objects."""
+                if isinstance(obj, dict):
+                    converted = {}
+                    for k, v in obj.items():
+                        if k == 'currency' and isinstance(v, str):
+                            converted[k] = convert_field_value('currency', v)
+                        else:
+                            converted[k] = convert_nested_currencies(v)
+                    return converted
+                elif isinstance(obj, list):
+                    return [convert_nested_currencies(item) for item in obj]
+                else:
+                    return obj
+
             # Convert and filter parameters
             filtered_kwargs = {}
             for field_name, value in param_values.items():
@@ -233,6 +282,8 @@ def create_dynamic_model_tool(model_class: Type[BaseModel], category: str) -> No
                     continue
                 if value is not None or field_name in required_params:
                     converted_value = convert_field_value(field_name, value)
+                    # Apply recursive currency conversion to nested objects
+                    converted_value = convert_nested_currencies(converted_value)
                     if converted_value is not None:
                         filtered_kwargs[field_name] = converted_value
 
